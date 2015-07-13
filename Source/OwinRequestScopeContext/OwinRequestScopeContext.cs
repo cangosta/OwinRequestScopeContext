@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Owin;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
+using System.Security.Principal;
 
 namespace Owin
 {
@@ -32,6 +34,16 @@ namespace Owin
         /// Gets the initial timestamp of the current HTTP request.
         /// </summary>
         DateTime Timestamp { get; }
+
+        /// <summary>
+        /// Gets the authenticated user
+        /// </summary>
+        IPrincipal User { get; }
+
+        /// <summary>
+        /// Gets the authenticated user
+        /// </summary>
+        IOwinRequest Request { get; }
     }
 
     public class OwinRequestScopeContext : IOwinRequestScopeContext
@@ -65,11 +77,17 @@ namespace Owin
         public IDictionary<string, object> Environment { get; private set; }
         public IDictionary<string, object> Items { get; private set; }
         public DateTime Timestamp { get { return utcTimestamp.ToLocalTime(); } }
+        public IPrincipal User { get; private set; }
+        public IOwinRequest Request { get; private set; }
 
         public OwinRequestScopeContext(IDictionary<string, object> environment, bool threadSafeItem)
         {
+            IOwinContext context = new OwinContext(environment);
             this.utcTimestamp = DateTime.UtcNow;
             this.Environment = environment;
+            this.User = context.Authentication.User;
+            this.Request = context.Request;
+
             if (threadSafeItem)
             {
                 this.Items = new ConcurrentDictionary<string, object>();
